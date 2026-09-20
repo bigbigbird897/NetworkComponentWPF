@@ -1,0 +1,63 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- 托盘图标用 WinForms 的 NotifyIcon，需开启 WinForms 支持 -->
+    <UseWindowsForms>true</UseWindowsForms>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Resources\Icon\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WebView2：嵌入式 Edge 浏览器控件 -->
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2903.40" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="Resources\Icon\app.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- 运行配置：网页地址、后端路径，随程序拷贝并可直接编辑 -->
+    <None Update="config.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- 后端接口服务工程路径（相对本 csproj 目录），可在命令行用 -p:BackendProjectPath=... 覆盖 -->
+    <BackendProjectPath Condition="'$(BackendProjectPath)'==''">..\..\NetworkComponent\NetworkComponent\NetworkComponent.csproj</BackendProjectPath>
+    <!-- 设为 false 可跳过自动发布后端：dotnet build -p:PublishBackend=false -->
+    <PublishBackend Condition="'$(PublishBackend)'==''">true</PublishBackend>
+    <!-- Web 前端工程目录（相对本 csproj），设为 false 可跳过 npm 构建 -->
+    <WebProjectPath Condition="'$(WebProjectPath)'==''">..\..\NetworkComponentWeb</WebProjectPath>
+    <BuildWeb Condition="'$(BuildWeb)'==''">true</BuildWeb>
+    <ApplicationIcon>Resources\Icon\app.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- 构建后：把后端 publish 到 WPF 输出目录的 backend\ 下，与 config.json 里的相对路径一致 -->
+  <Target Name="PublishBackend" AfterTargets="Build" Condition="'$(PublishBackend)'=='true'">
+    <Message Importance="high" Text="==&gt; 正在发布后端接口服务到 $(OutDir)backend ..." />
+    <Exec Command="dotnet publish &quot;$(BackendProjectPath)&quot; -c $(Configuration) -o &quot;$(OutDir)backend&quot; --nologo" />
+  </Target>
+
+  <!-- 前端打包：先在 Web 工程目录执行 npm run build 生成 dist -->
+  <Target Name="BuildWeb" Condition="'$(BuildWeb)'=='true'">
+    <Message Importance="high" Text="==&gt; 正在构建 Web 控制台（npm run build）..." />
+    <Exec Command="npm run build" WorkingDirectory="$(WebProjectPath)" />
+  </Target>
+
+  <!-- 前端构建后：把 dist 拷到后端 wwwroot，由后端在根路径直接托管 -->
+  <Target Name="CopyWebDist" AfterTargets="PublishBackend" DependsOnTargets="BuildWeb">
+    <ItemGroup>
+      <WebDist Include="..\..\NetworkComponentWeb\dist\**\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(WebDist)" DestinationFiles="@(WebDist->'$(OutDir)backend\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Message Importance="high" Text="==&gt; 已同步 Web 控制台 dist 到 backend\wwwroot（@(WebDist-&gt;Count()) 个文件）" />
+  </Target>
+
+</Project>
