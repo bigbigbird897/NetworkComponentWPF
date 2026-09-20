@@ -42,7 +42,7 @@
   <!-- 构建后：把后端 publish 到 WPF 输出目录的 backend\ 下，与 config.json 里的相对路径一致 -->
   <Target Name="PublishBackend" AfterTargets="Build" Condition="'$(PublishBackend)'=='true'">
     <Message Importance="high" Text="==&gt; 正在发布后端接口服务到 $(OutDir)backend ..." />
-    <Exec Command="dotnet publish &quot;$(BackendProjectPath)&quot; -c $(Configuration) -o &quot;$(OutDir)backend&quot; --nologo" />
+    <Exec Command="dotnet publish &quot;$(BackendProjectPath)&quot; -c $(Configuration) -r win-x64 --self-contained true -p:PublishSingleFile=false -o &quot;$(OutDir)backend&quot; --nologo" />
   </Target>
 
   <!-- 前端打包：先在 Web 工程目录执行 npm run build 生成 dist -->
