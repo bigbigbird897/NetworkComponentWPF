@@ -39,10 +39,12 @@
     <ApplicationIcon>Resources\Icon\app.ico</ApplicationIcon>
   </PropertyGroup>
 
-  <!-- 构建后：把后端 publish 到 WPF 输出目录的 backend\ 下，与 config.json 里的相对路径一致 -->
+  <!-- 构建后：把后端 publish 到 WPF 最终输出目录的 backend\ 下，与 config.json 里的相对路径一致。
+       必须用 $(PublishDir) 而非 $(OutDir)：dotnet publish -o 的最终输出在 PublishDir，
+       OutDir 只是中间编译目录；用错会导致最终发布包里缺 backend\。 -->
   <Target Name="PublishBackend" AfterTargets="Build" Condition="'$(PublishBackend)'=='true'">
-    <Message Importance="high" Text="==&gt; 正在发布后端接口服务到 $(OutDir)backend ..." />
-    <Exec Command="dotnet publish &quot;$(BackendProjectPath)&quot; -c $(Configuration) -r win-x64 --self-contained true -p:PublishSingleFile=false -o &quot;$(OutDir)backend&quot; --nologo" />
+    <Message Importance="high" Text="==&gt; 正在发布后端接口服务到 $(PublishDir)backend ..." />
+    <Exec Command="dotnet publish &quot;$(BackendProjectPath)&quot; -c $(Configuration) -r win-x64 --self-contained true -p:PublishSingleFile=false -o &quot;$([MSBuild]::NormalizeDirectory('$(PublishDir)'))backend&quot; --nologo" />
   </Target>
 
   <!-- 前端打包：先在 Web 工程目录执行 npm run build 生成 dist -->
@@ -56,7 +58,7 @@
     <ItemGroup>
       <WebDist Include="..\..\NetworkComponentWeb\dist\**\*.*" />
     </ItemGroup>
-    <Copy SourceFiles="@(WebDist)" DestinationFiles="@(WebDist->'$(OutDir)backend\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(WebDist)" DestinationFiles="@(WebDist->'$([MSBuild]::NormalizeDirectory('$(PublishDir)'))backend\wwwroot\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
     <Message Importance="high" Text="==&gt; 已同步 Web 控制台 dist 到 backend\wwwroot（@(WebDist-&gt;Count()) 个文件）" />
   </Target>
 
