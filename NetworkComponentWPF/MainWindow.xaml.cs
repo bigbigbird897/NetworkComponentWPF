@@ -123,7 +123,7 @@ namespace NetworkComponentWPF
         private void InitTray()
         {
             _notifyIcon.Icon = LoadAppIcon();
-            _notifyIcon.Text = "通枢工业通信中台";
+            _notifyIcon.Text = "工业通信中台";
             _notifyIcon.Visible = true;
 
             var menu = new WinForms.ContextMenuStrip();
@@ -295,7 +295,7 @@ namespace NetworkComponentWPF
             {
                 e.Cancel = true;
                 Hide();
-                _notifyIcon.ShowBalloonTip(2000, "通枢工业通信中台",
+                _notifyIcon.ShowBalloonTip(2000, "工业通信中台",
                     "程序已驻留后台，接口服务仍在运行。双击托盘图标可重新打开。",
                     WinForms.ToolTipIcon.Info);
                 return;
